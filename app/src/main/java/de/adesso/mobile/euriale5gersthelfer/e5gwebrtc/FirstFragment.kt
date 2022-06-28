@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.databinding.FragmentFirstBinding
+import org.webrtc.EglBase
+import java.util.*
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -41,4 +43,13 @@ class FirstFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
+
+    private val connectionList: List<Connection> = emptyList()
+
+    private val userId = UUID.randomUUID().toString().substring(0, 8)
+
+    // EglBase seems to handle all Surface related operations.
+    private val eglBase = EglBase.create()
+
+    private fun setupWamp() = Wamper()
 }
