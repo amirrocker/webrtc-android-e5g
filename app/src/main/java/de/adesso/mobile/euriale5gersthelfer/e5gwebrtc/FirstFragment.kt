@@ -7,6 +7,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.databinding.FragmentFirstBinding
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.wamp.Wamper
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.webrtc.Connection
 import org.webrtc.EglBase
 import java.util.*
 
@@ -51,5 +53,5 @@ class FirstFragment : Fragment() {
     // EglBase seems to handle all Surface related operations.
     private val eglBase = EglBase.create()
 
-    private fun setupWamp() = Wamper()
+    private fun setupWamp() = Wamper(requireActivity(), "abcdef")
 }
