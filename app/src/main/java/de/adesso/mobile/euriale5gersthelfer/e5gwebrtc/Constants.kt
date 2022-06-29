@@ -16,4 +16,5 @@ object WebRtC {
 
 object ErrorMessage {
     const val InvalidPeerConnection = "peerConnection is null!"
+    const val InvalidSessionDescription = "sessionDescription is empty or null!"
 }

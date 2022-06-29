@@ -119,7 +119,7 @@ class BasicWamp(
         makeCandidateSubscription(candidateTopic)
 
         // handle callme
-        val callmeTopic = callMeTopic(userId)
+        val callmeTopic = callMeTopic()
         // response is the payload received from subscription
         makeCallmeSubscription(callmeTopic)
 
@@ -164,7 +164,7 @@ class BasicWamp(
                 }
                 sdp = json.getString("candidate")
                 val sdpMid = json.getString("sdpMid")
-                val sdpMLineIndex = json.getString("sdpMLineIndex")
+                val sdpMLineIndex = json.getInt("sdpMLineIndex")
 
                 callbacks.onIceCandidate(targetId, sdp, sdpMid, sdpMLineIndex)
             } catch (e: WampError) {

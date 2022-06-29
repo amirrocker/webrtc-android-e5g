@@ -2,11 +2,15 @@ package de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.webrtc
 
 import android.app.Activity
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.ErrorMessage.InvalidPeerConnection
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.ErrorMessage.InvalidSessionDescription
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtC.StunUri
+import org.webrtc.DataChannel
 import org.webrtc.EglBase
+import org.webrtc.IceCandidate
 import org.webrtc.MediaStream
 import org.webrtc.PeerConnection
 import org.webrtc.PeerConnectionFactory
+import org.webrtc.RtpReceiver
 import org.webrtc.SdpObserver
 import org.webrtc.SessionDescription
 import org.webrtc.VideoCapturer
@@ -42,26 +46,110 @@ class BasicWebRtC(
         } ?: println("factory is null!")
     }
 
-    override fun receiveOffer(sdp: String) {
-        // remote description
-        val remoteDescription = SessionDescription
+    /*
+    * PeerConnection.Observer implementation
+    */
+    override fun onIceCandidate(p0: IceCandidate?) {
+        val iceCandidate = p0 ?: error("could not establish ice candiate")
+        callbacks.onIceCandidate(iceCandidate.sdp, iceCandidate.sdpMid, iceCandidate.sdpMLineIndex)
     }
 
+    override fun onAddStream(p0: MediaStream?) {
+        val stream = p0 ?: error("stream is null")
+        callbacks.onAddedStream(stream)
+    }
+
+    override fun onSignalingChange(p0: PeerConnection.SignalingState?) =
+        println("onSignalingChange")
+
+    override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) =
+        println("onIceConnectionChange")
+
+    override fun onIceConnectionReceivingChange(p0: Boolean) =
+        println("onIceConnectionReceivingChange")
+
+    override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) =
+        println("onIceGatheringChange")
+
+    override fun onIceCandidatesRemoved(p0: Array<out IceCandidate>?) =
+        println("onIceCandidatesRemoved")
+
+    override fun onRemoveStream(p0: MediaStream?) =
+        println("onRemoveStream")
+
+    override fun onDataChannel(p0: DataChannel?) =
+        println("onDataChannel")
+
+    override fun onRenegotiationNeeded() =
+        println("onRenegotiationNeeded")
+
+    override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) =
+        println("onAddTrack")
+
+    override fun receiveCandidate(sdp: String, sdpMid: String, sdpMLineIndex: Int) {
+        peerConnection?.let { connection ->
+            connection.addIceCandidate(IceCandidate(sdpMid, sdpMLineIndex, sdp))
+        } ?: error(InvalidPeerConnection)
+    }
+
+    // TODO remove this "callback hell"!
+    override fun receiveOffer(sdp: String) {
+        // remote description
+        val remoteDescription = SessionDescription(SessionDescription.Type.OFFER, sdp)
+        peerConnection?.let { connection ->
+            connection.setRemoteDescription(
+                object : SkeletalSdpObserver() {
+                    override fun onSetSuccess() {
+                        connection.createAnswer(
+                            object : SkeletalSdpObserver() {
+                                override fun onCreateSuccess(p0: SessionDescription?) {
+                                    connection.setLocalDescription(
+                                        object : SkeletalSdpObserver() {
+                                            override fun onSetSuccess() {
+                                                callbacks.onCreateAnswer(
+                                                    p0?.description ?: error(
+                                                        InvalidSessionDescription
+                                                    )
+                                                )
+                                            }
+                                        },
+                                        p0
+                                    )
+                                }
+                            },
+                            WebRtCUtil.answerConnectionConstraints()
+                        )
+                    }
+
+                    override fun onSetFailure(p0: String?) {
+                        val error = p0 ?: "WebRtC error[onSetFailure] encountered."
+                        error(error)
+                    }
+                },
+                remoteDescription
+            )
+        } ?: error(InvalidPeerConnection)
+    }
+
+    // TODO not as bad as the former but still rem callback hell here also
     override fun createOffer() =
         peerConnection?.let { connection ->
             println("createOffer called")
             connection.createOffer(
                 object : SkeletalSdpObserver() {
-                    override fun onCreateSuccess(sessionDescription: SessionDescription?) {
+                    override fun onCreateSuccess(p0: SessionDescription?) {
                         peerConnection?.let { innerPeerConnection ->
-                            innerPeerConnection.setLocalDescription(object : SkeletalSdpObserver() {
-                                override fun onSetSuccess() {
-                                    callbacks.onCreateOffer(
-                                        sessionDescription?.description
-                                            ?: error("sessionDescription.description is null")
-                                    )
-                                }
-                            })
+                            innerPeerConnection.setLocalDescription(
+                                object : SkeletalSdpObserver() {
+                                    override fun onSetSuccess() {
+                                        callbacks.onCreateOffer(
+                                            p0?.description
+                                                ?: error(InvalidSessionDescription)
+                                        )
+                                    }
+                                },
+                                p0
+                            )
                         }
                     }
                 },
@@ -69,16 +157,24 @@ class BasicWebRtC(
             )
         } ?: error(InvalidPeerConnection)
 
-    override fun receiveAnswer(sdp: String) {
-        TODO("Not yet implemented")
-    }
-
-    override fun receiveCandidate(sdp: String, sdpMid: String, sdpMLineIndex: Int) {
-        TODO("Not yet implemented")
-    }
+    override fun receiveAnswer(sdp: String) =
+        peerConnection?.let { connection ->
+            connection.setRemoteDescription(
+                object : SkeletalSdpObserver() {
+                    override fun onSetSuccess() {
+                        println("onSetSuccess called")
+                    }
+                },
+                SessionDescription(SessionDescription.Type.ANSWER, sdp)
+            )
+        } ?: error(InvalidPeerConnection)
 
     override fun close() {
-        TODO("Not yet implemented")
+        peerConnection?.let {
+            it.removeStream(localStream)
+            it.close()
+        }
+        peerConnection = null
     }
 
     companion object {
@@ -97,6 +193,15 @@ class BasicWebRtC(
 
         internal fun setup(activity: Activity, eglBase: EglBase) {
             BasicWebRtC.eglBase = eglBase
+
+            // init factory
+            val options = PeerConnectionFactory.Options()
+            PeerConnectionFactory.initializeAndroidGlobals(activity.applicationContext, true)
+            factory = PeerConnectionFactory(options)
+            factory!!.setVideoHwAccelerationOptions(eglBase.eglBaseContext, eglBase.eglBaseContext)
+
+            val localStream = factory!!.createLocalMediaStream("TEST_LOCAL_ANDROID_STREAM")
+            this.localStream = localStream
         }
     }
 }
