@@ -62,25 +62,29 @@ class Wamper(
                 }
 
                 override fun onReceiveOffer(targetId: WampTargetId, sdp: String) {
-                    val connection = createConnection(targetId)
+                    createConnection(targetId).apply {
+                        receiveOffer(sdp)
+                    }
                 }
 
                 override fun onIceCandidate(
                     targetId: WampTargetId,
-                    sdp: String,
+                    candidate: String,
                     sdpMid: String,
                     sdpMLineIndex: Int
                 ) {
-                    TODO("Not yet implemented")
+                    val connection = createConnection(targetId)
+                    connection.receiveCandidate(candidate, sdpMid, sdpMLineIndex)
                 }
 
                 override fun onReceiveCallme(targetId: WampTargetId) {
-                    TODO("Not yet implemented")
+                    createConnection(targetId).apply {
+                        this.publishOffer()
+                    }
                 }
 
-                override fun onCloseConnection(targetId: WampTargetId) {
-                    TODO("Not yet implemented")
-                }
+                override fun onCloseConnection(targetId: WampTargetId) =
+                    println("onCloseConnection called with targetId: $targetId")
             }
         )
     }
@@ -88,35 +92,38 @@ class Wamper(
     private var remoteIndex = 0
 
     private fun createConnection(targetId: WampTargetId): Connection {
-        val connection = BasicConnection(userId, targetId, wamp!!, object: ConnectionCallbacks {
-            override fun onAddedStream(mediaStream: MediaStream) {
-                if(mediaStream.videoTracks.size == 0) {
-                    println("no video tracks found. Bailing out ...")
-                    return
-                }
-                val remoteVideoTrack = mediaStream.videoTracks.first
-
-                activity.runOnUiThread {
-                    val remoteRenderer = SurfaceViewRenderer(activity)
-                    val row = remoteIndex / 2
-                    val col = remoteIndex % 2
-//                    val params = GridLayout.LayoutParams().apply {
-                    remoteRenderer.layoutParams = GridLayout.LayoutParams().apply {
-                        columnSpec = GridLayout.spec(col, 1)
-                        rowSpec = GridLayout.spec(row, 1)
-                        width = GRID_LAYOUT_WIDTH
-                        width = GRID_LAYOUT_HEIGHT
-                        leftMargin = GRID_LAYOUT_LEFT_MARGIN
-                        rightMargin = GRID_LAYOUT_RIGHT_MARGIN
-                        topMargin = GRID_LAYOUT_TOP_MARGIN
+        val connection = BasicConnection(
+            userId, targetId, wamp!!,
+            object : ConnectionCallbacks {
+                override fun onAddedStream(mediaStream: MediaStream) {
+                    if (mediaStream.videoTracks.size == 0) {
+                        println("no video tracks found. Bailing out ...")
+                        return
                     }
+                    val remoteVideoTrack = mediaStream.videoTracks.first
+
+                    activity.runOnUiThread {
+                        val remoteRenderer = SurfaceViewRenderer(activity)
+                        val row = remoteIndex / 2
+                        val col = remoteIndex % 2
+//                    val params = GridLayout.LayoutParams().apply {
+                        remoteRenderer.layoutParams = GridLayout.LayoutParams().apply {
+                            columnSpec = GridLayout.spec(col, 1)
+                            rowSpec = GridLayout.spec(row, 1)
+                            width = GRID_LAYOUT_WIDTH
+                            width = GRID_LAYOUT_HEIGHT
+                            leftMargin = GRID_LAYOUT_LEFT_MARGIN
+                            rightMargin = GRID_LAYOUT_RIGHT_MARGIN
+                            topMargin = GRID_LAYOUT_TOP_MARGIN
+                        }
 //                    remoteRenderer.layoutParams = params
 
-                    val videoRenderer = setupRenderer(remoteRenderer)
-                    remoteVideoTrack.addRenderer(videoRenderer)
+                        val videoRenderer = setupRenderer(remoteRenderer)
+                        remoteVideoTrack.addRenderer(videoRenderer)
+                    }
                 }
             }
-        })
+        )
     }
 
     private fun setupRenderer(remoteRenderer: SurfaceViewRenderer): VideoRenderer =
