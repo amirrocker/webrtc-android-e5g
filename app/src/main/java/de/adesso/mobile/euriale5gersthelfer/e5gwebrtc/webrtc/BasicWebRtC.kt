@@ -1,9 +1,14 @@
 package de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.webrtc
 
 import android.app.Activity
+import android.content.Context
+import android.util.DisplayMetrics
+import android.view.WindowManager
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.ErrorMessage.InvalidPeerConnection
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.ErrorMessage.InvalidSessionDescription
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtC.StunUri
+import org.webrtc.Camera2Enumerator
+import org.webrtc.CameraEnumerator
 import org.webrtc.DataChannel
 import org.webrtc.EglBase
 import org.webrtc.IceCandidate
@@ -195,13 +200,99 @@ class BasicWebRtC(
             BasicWebRtC.eglBase = eglBase
 
             // init factory
+//            val options = PeerConnectionFactory.Options()
+//            PeerConnectionFactory.initializeAndroidGlobals(activity.applicationContext, true)
+//            factory = PeerConnectionFactory(options)
+//            factory!!.setVideoHwAccelerationOptions(eglBase.eglBaseContext, eglBase.eglBaseContext)
+
+            initializePeerConnectionFactory(activity)
+
+//            val localStream = factory!!.createLocalMediaStream("TEST_LOCAL_ANDROID_STREAM")
+//            this.localStream = localStream
+
+            initializeLocalStream()
+
+//            // setup the different tracks - video and audio
+//            videoCapturer = createCameraCapturer(Camera2Enumerator(activity))
+//            val localVideoSource = factory!!.createVideoSource(videoCapturer)
+//            localVideoTrack = factory!!.createVideoTrack("TEST_LOCAL_ANDROID_STREAM", localVideoSource)
+//            localStream.addTrack(localVideoTrack)
+
+            initializeTracks(activity)
+
+//            // initialize DisplayMetrics
+//            val displayMetrics = DisplayMetrics()
+//            val windowManager = activity.application.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+//            // how to avoid deprecation ?
+//            windowManager.defaultDisplay.getRealMetrics(displayMetrics)
+//            val videoWidth = displayMetrics.widthPixels
+//            val videoHeight = displayMetrics.heightPixels
+
+            val widthHeight:Pair<Int, Int> = initializeDisplayMetrics(activity)
+
+            videoCapturer?.let {
+                it.startCapture(widthHeight.first, widthHeight.second, 30)
+            }
+        }
+
+        private fun initializeDisplayMetrics(activity: Activity): Pair<Int, Int> {
+            // initialize DisplayMetrics
+            val displayMetrics = DisplayMetrics()
+            val windowManager = activity.application.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            // how to avoid deprecation ?
+            windowManager.defaultDisplay.getRealMetrics(displayMetrics)
+            val videoWidth = displayMetrics.widthPixels
+            val videoHeight = displayMetrics.heightPixels
+            return Pair(videoWidth, videoHeight)
+        }
+
+        private fun initializeTracks(activity: Activity) {
+            initializeVideoTrack(activity)
+
+            initializeAudioTrack(activity)
+        }
+
+        private fun initializeAudioTrack(activity: Activity) {
+            val audioSource = factory!!.createAudioSource(WebRtCUtil.mediaStreamConstraints())
+            val audioTrack = factory!!.createAudioTrack("TEST_LOCAL_ANDROID_AUDIO_TRACK", audioSource)
+            localStream.addTrack(audioTrack)
+        }
+
+        private fun initializeVideoTrack(activity: Activity) {
+            // setup the different tracks - video and audio
+            videoCapturer = createCameraCapturer(Camera2Enumerator(activity))
+            val localVideoSource = factory!!.createVideoSource(videoCapturer)
+            localVideoTrack = factory!!.createVideoTrack("TEST_LOCAL_ANDROID_VIDEO_TRACK", localVideoSource)
+            localStream?.addTrack(localVideoTrack)
+        }
+
+        private fun createCameraCapturer(cameraEnumerator: CameraEnumerator):VideoCapturer? =
+            createBackCameraCapturer(cameraEnumerator)
+
+
+        private fun initializeLocalStream() {
+            this.localStream = factory!!.createLocalMediaStream("TEST_LOCAL_ANDROID_STREAM")
+        }
+
+        private fun createBackCameraCapturer(cameraEnumerator: CameraEnumerator): VideoCapturer? {
+            val deviceNames = cameraEnumerator.deviceNames
+
+            deviceNames.forEach {
+                if(cameraEnumerator.isBackFacing(it)) {
+                    val capturer = cameraEnumerator.createCapturer(it, null)
+                    if(capturer != null) return capturer
+                }
+            }
+            return null
+        }
+
+        private fun initializePeerConnectionFactory(activity: Activity) {
             val options = PeerConnectionFactory.Options()
             PeerConnectionFactory.initializeAndroidGlobals(activity.applicationContext, true)
-            factory = PeerConnectionFactory(options)
-            factory!!.setVideoHwAccelerationOptions(eglBase.eglBaseContext, eglBase.eglBaseContext)
-
-            val localStream = factory!!.createLocalMediaStream("TEST_LOCAL_ANDROID_STREAM")
-            this.localStream = localStream
+            factory = PeerConnectionFactory(options).apply {
+                this.setVideoHwAccelerationOptions(eglBase?.eglBaseContext, eglBase?.eglBaseContext)
+            }
         }
+
     }
 }

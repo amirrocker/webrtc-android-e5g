@@ -2,8 +2,8 @@ package de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.wamp
 
 import android.app.Activity
 import com.fasterxml.jackson.databind.ObjectMapper
-import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.Wamp.HandshakeEndpoint
-import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.Wamp.RealmOne
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WampFlags.HandshakeEndpoint
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WampFlags.RealmOne
 import org.json.JSONObject
 import rx.android.app.AppObservable
 import ws.wamp.jawampa.WampClient

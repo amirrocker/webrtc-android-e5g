@@ -8,9 +8,6 @@ import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.databinding.FragmentFirstBinding
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.wamp.Wamper
-import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.webrtc.Connection
-import org.webrtc.EglBase
-import java.util.*
 
 /**
  * A simple [Fragment] subclass as the default destination in the navigation.
@@ -22,6 +19,8 @@ class FirstFragment : Fragment() {
     // This property is only valid between onCreateView and
     // onDestroyView.
     private val binding get() = _binding!!
+
+    private var wamp: WampFlags? = null
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -46,12 +45,12 @@ class FirstFragment : Fragment() {
         _binding = null
     }
 
-    private val connectionList: List<Connection> = emptyList()
+//    private val connectionList: List<Connection> = emptyList()
 
-    private val userId = UUID.randomUUID().toString().substring(0, 8)
-
-    // EglBase seems to handle all Surface related operations.
-    private val eglBase = EglBase.create()
+//    private val userId = UUID.randomUUID().toString().substring(0, 8)
+//
+//    // EglBase seems to handle all Surface related operations.
+//    private val eglBase = EglBase.create()
 
     private fun setupWamp() = Wamper(requireActivity(), "abcdef")
 }
