@@ -7,7 +7,7 @@ object WampFlags {
     const val RealmOne = "realm1"
 }
 
-object WebRtC {
+object WebRtCFlags {
     const val OfferToReceiveAudio = "OfferToReceiveAudio"
     const val OfferToReceiveVideo = "OfferToReceiveVideo"
     const val TrueValue = "true"
@@ -25,4 +25,8 @@ object GridLayout {
     const val GRID_LAYOUT_LEFT_MARGIN = 10
     const val GRID_LAYOUT_RIGHT_MARGIN = 10
     const val GRID_LAYOUT_TOP_MARGIN = 10
+}
+
+object AppPermissions {
+    const val REQUEST_CODE_CAMERA_PERMISSION = 123456
 }

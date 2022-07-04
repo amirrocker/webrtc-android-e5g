@@ -6,7 +6,7 @@ import android.util.DisplayMetrics
 import android.view.WindowManager
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.ErrorMessage.InvalidPeerConnection
 import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.ErrorMessage.InvalidSessionDescription
-import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtC.StunUri
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtCFlags.StunUri
 import org.webrtc.Camera2Enumerator
 import org.webrtc.CameraEnumerator
 import org.webrtc.DataChannel
@@ -228,7 +228,7 @@ class BasicWebRtC(
 //            val videoWidth = displayMetrics.widthPixels
 //            val videoHeight = displayMetrics.heightPixels
 
-            val widthHeight:Pair<Int, Int> = initializeDisplayMetrics(activity)
+            val widthHeight: Pair<Int, Int> = initializeDisplayMetrics(activity)
 
             videoCapturer?.let {
                 it.startCapture(widthHeight.first, widthHeight.second, 30)
@@ -238,7 +238,8 @@ class BasicWebRtC(
         private fun initializeDisplayMetrics(activity: Activity): Pair<Int, Int> {
             // initialize DisplayMetrics
             val displayMetrics = DisplayMetrics()
-            val windowManager = activity.application.getSystemService(Context.WINDOW_SERVICE) as WindowManager
+            val windowManager =
+                activity.application.getSystemService(Context.WINDOW_SERVICE) as WindowManager
             // how to avoid deprecation ?
             windowManager.defaultDisplay.getRealMetrics(displayMetrics)
             val videoWidth = displayMetrics.widthPixels
@@ -254,21 +255,22 @@ class BasicWebRtC(
 
         private fun initializeAudioTrack(activity: Activity) {
             val audioSource = factory!!.createAudioSource(WebRtCUtil.mediaStreamConstraints())
-            val audioTrack = factory!!.createAudioTrack("TEST_LOCAL_ANDROID_AUDIO_TRACK", audioSource)
-            localStream.addTrack(audioTrack)
+            val audioTrack =
+                factory!!.createAudioTrack("TEST_LOCAL_ANDROID_AUDIO_TRACK", audioSource)
+            localStream?.addTrack(audioTrack)
         }
 
         private fun initializeVideoTrack(activity: Activity) {
             // setup the different tracks - video and audio
             videoCapturer = createCameraCapturer(Camera2Enumerator(activity))
             val localVideoSource = factory!!.createVideoSource(videoCapturer)
-            localVideoTrack = factory!!.createVideoTrack("TEST_LOCAL_ANDROID_VIDEO_TRACK", localVideoSource)
+            localVideoTrack =
+                factory!!.createVideoTrack("TEST_LOCAL_ANDROID_VIDEO_TRACK", localVideoSource)
             localStream?.addTrack(localVideoTrack)
         }
 
-        private fun createCameraCapturer(cameraEnumerator: CameraEnumerator):VideoCapturer? =
+        private fun createCameraCapturer(cameraEnumerator: CameraEnumerator): VideoCapturer? =
             createBackCameraCapturer(cameraEnumerator)
-
 
         private fun initializeLocalStream() {
             this.localStream = factory!!.createLocalMediaStream("TEST_LOCAL_ANDROID_STREAM")
@@ -278,9 +280,9 @@ class BasicWebRtC(
             val deviceNames = cameraEnumerator.deviceNames
 
             deviceNames.forEach {
-                if(cameraEnumerator.isBackFacing(it)) {
+                if (cameraEnumerator.isBackFacing(it)) {
                     val capturer = cameraEnumerator.createCapturer(it, null)
-                    if(capturer != null) return capturer
+                    if (capturer != null) return capturer
                 }
             }
             return null
@@ -293,6 +295,5 @@ class BasicWebRtC(
                 this.setVideoHwAccelerationOptions(eglBase?.eglBaseContext, eglBase?.eglBaseContext)
             }
         }
-
     }
 }

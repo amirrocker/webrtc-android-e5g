@@ -25,7 +25,7 @@ class Wamper(
     private val userId = UUID.randomUUID().toString().substring(0, 8)
 
     // EglBase seems to handle all Surface related operations.
-    private val eglBase = EglBase.create()
+    val eglBase = EglBase.create()
 
     private val connectionList: List<Connection> = emptyList()
 
@@ -45,7 +45,11 @@ class Wamper(
         return null
     }
 
-    fun setup() {
+    fun connect() {
+        wamp?.connect() ?: error("could not connect to wamp")
+    }
+
+    fun setupWamp() {
 
         wamp = BasicWamp(
             activity, "roomId", "userId",
@@ -91,8 +95,8 @@ class Wamper(
 
     private var remoteIndex = 0
 
-    private fun createConnection(targetId: WampTargetId): Connection {
-        val connection = BasicConnection(
+    private fun createConnection(targetId: WampTargetId): Connection =
+        BasicConnection(
             userId, targetId, wamp!!,
             object : ConnectionCallbacks {
                 override fun onAddedStream(mediaStream: MediaStream) {
@@ -124,9 +128,8 @@ class Wamper(
                 }
             }
         )
-    }
 
-    private fun setupRenderer(remoteRenderer: SurfaceViewRenderer): VideoRenderer =
+    fun setupRenderer(remoteRenderer: SurfaceViewRenderer): VideoRenderer =
         with(remoteRenderer) {
             init(eglBase.eglBaseContext, null)
             setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FILL)

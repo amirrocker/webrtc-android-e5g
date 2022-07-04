@@ -1,8 +1,8 @@
 package de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.webrtc
 
-import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtC.OfferToReceiveAudio
-import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtC.OfferToReceiveVideo
-import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtC.TrueValue
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtCFlags.OfferToReceiveAudio
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtCFlags.OfferToReceiveVideo
+import de.adesso.mobile.euriale5gersthelfer.e5gwebrtc.WebRtCFlags.TrueValue
 import org.webrtc.MediaConstraints
 
 object WebRtCUtil {
